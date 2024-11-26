@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netplan file creator</title>
+</head>
+<body>
+    <header>
+        <h1>Netplan file creator</h1>
+    </header>
+    <main>
+<div class="container"></div>
+<div>
+    <form id="questionnaireForm">
+        <div class="section">
+            <h2>Network settings</h2>
+            <label for="interfacename" style="display:block">Network interface name (default enp3s0)</label>
+            <input type="text" id="interfacename" name="interfacename">
+            <label for="ipaddress" style="display:block">IP Address</label>
+            <input type="text" id="ipaddress" name="ipaddress" required>
+            <label for="cidr" style="display:block">CIDR (Ex. /24)</label>
+            <input type="text" id="cidr" name="cidr" required>
+            <label for="gateway" style="display:block">Gateway</label>
+            <input type="text" id="gateway" name="gateway" required>
+            <label for="dns" style="display:block">DNS (Separate by commas)</label>
+            <input type="text" id="dns" name="dns" required>
+        </div>
+        <button type="submit">Enviar</button>
+    </form>
+</div>
+
+<div id="formOutput" style="display:none;">
+    <h2>Netplan file</h2>
+    <hr>
+    <pre id="outputContent"></pre>
+    <button id="downloadButton" style="margin-top: 10px;">Download Netplan file</button>
+</div>
+
+</main>
+
+<script>
+    document.getElementById('questionnaireForm').addEventListener('submit', function(event) {
+        event.preventDefault(); 
+
+        const interfacenameInput = document.getElementById('interfacename');
+        if (interfacenameInput.value.trim() === '') {
+            interfacenameInput.value = 'enp3s0';
+        }
+        
+        const formData = new FormData(this);
+
+        let netplanOutput = `network:\n`;
+        netplanOutput += `  version: 2\n`;
+        netplanOutput += `  renderer: networkd\n`;
+        netplanOutput += `  ethernets:\n`;
+        netplanOutput += `        ${formData.get('interfacename')}:\n`;
+        netplanOutput += `            dhcp4: no\n`;
+        netplanOutput += `            addresses:\n`;
+        netplanOutput += `                - ${formData.get('ipaddress')}${formData.get('cidr')}\n`;
+        netplanOutput += `            nameservers:\n`;
+        netplanOutput += `                addresses: [${formData.get('dns')}]\n`;
+        netplanOutput += `            routes:\n`;
+        netplanOutput += `                - to: default\n`;
+        netplanOutput += `                  via: ${formData.get('gateway')}\n`;
+
+        document.getElementById('outputContent').textContent = netplanOutput;
+        document.getElementById('formOutput').style.display = 'block';
+        document.getElementById('questionnaireForm').style.display = 'none';
+
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            const blob = new Blob([netplanOutput], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'netplan.yaml';
+            link.click();
+        });
+    });
+</script>
+</body>
+</html>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+        margin: 0;
+        padding: 0;
+    }
+    
+    header {
+        background-color: #df80a2;
+        color: white;
+        text-align: center;
+        padding: 20px 0;
+    }
+    
+    h1 {
+        margin: 0;
+    }
+    
+    main {
+        padding: 20px;
+    }
+    
+    h2 {
+        font-size: 20px;
+        color: black;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 10px;
+    }
+    
+    input {
+        display: inline-block;
+        margin-bottom: 10px;
+        vertical-align: middle;
+    }
+    
+    
+    
+    #formOutput {
+        margin-top: 20px;
+    }
+    
+    pre {
+        background-color: #e9ecef;
+        padding: 15px;
+        border-radius: 5px;
+    }
+    
+        
+        
+    </style>
